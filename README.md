@@ -5,7 +5,8 @@ OpenAPI-спецификация двух сервисов для работы �
 ## Состав
 
 - `docs/ORIGINAL_TASK.md` — исходное условие лабораторной работы.
-- `public/openapi.yaml` — OpenAPI-спецификация.
+- `public/flats.yaml` — OpenAPI-спецификация сервиса квартир.
+- `public/agency.yaml` — OpenAPI-спецификация сервиса агентства.
 - `public/index.html` — страница Swagger UI.
 
 ## Локальный запуск
@@ -15,3 +16,4 @@ python -m http.server 8000 --bind 127.0.0.1 --directory public
 ```
 
 Документация будет доступна по адресу <http://127.0.0.1:8000/>.
+Сервис выбирается в списке в верхней части Swagger UI.

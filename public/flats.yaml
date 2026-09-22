@@ -1,19 +1,18 @@
 openapi: 3.0.3
 info:
-  title: Управление квартирами и агентство недвижимости
+  title: Flat Collection Service
   version: 1.0.0
-  description: API для управления квартирами и сравнения их стоимости.
+  description: API для управления коллекцией квартир.
 tags:
   - name: Flats
     description: Управление квартирами
   - name: Statistics
     description: Поиск по дате создания и новизне, подсчёт по транспорту
-  - name: Agency
-    description: Сравнение квартир по цене в рублях
 paths:
   /flats:
     get:
-      tags: [Flats]
+      tags:
+        - Flats
       operationId: listFlats
       summary: Получить страницу квартир
       description: |
@@ -66,8 +65,10 @@ paths:
             uniqueItems: true
             items:
               type: string
-              pattern: '^(id|name|coordinates|coordinates\.x|coordinates\.y|creationDate|area|price|numberOfRooms|new|view|transport|house|house\.name|house\.year|house\.numberOfFloors|house\.numberOfFlatsOnFloor|house\.numberOfLifts):(asc|desc)$'
-          example: ['area:asc', 'name:desc']
+              pattern: ^(id|name|coordinates|coordinates\.x|coordinates\.y|creationDate|area|price|numberOfRooms|new|view|transport|house|house\.name|house\.year|house\.numberOfFloors|house\.numberOfFlatsOnFloor|house\.numberOfLifts):(asc|desc)$
+          example:
+            - area:asc
+            - name:desc
         - name: filter
           in: query
           description: |
@@ -80,14 +81,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlatFilter'
+                $ref: "#/components/schemas/FlatFilter"
               example:
                 new: true
                 house:
                   numberOfFloors: 5
                 transport: null
       responses:
-        '200':
+        "200":
           description: Страница квартир, возможно пустая
           headers:
             X-Total-Count:
@@ -101,22 +102,21 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Flat'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                  $ref: "#/components/schemas/Flat"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
     post:
-      tags: [Flats]
+      tags:
+        - Flats
       operationId: createFlat
       summary: Добавить квартиру
-      description: |
-        Создаёт квартиру из параметра `flat`. Сервер назначает `id` и дату создания.
-
+      description: Создаёт квартиру из параметра `flat`. Сервер назначает `id` и дату создания.
       parameters:
-        - $ref: '#/components/parameters/FlatInput'
+        - $ref: "#/components/parameters/FlatInput"
       responses:
-        '201':
+        "201":
           description: Квартира создана
           headers:
             Location:
@@ -127,80 +127,87 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Flat'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '414':
-          $ref: '#/components/responses/UriTooLong'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                $ref: "#/components/schemas/Flat"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "414":
+          $ref: "#/components/responses/UriTooLong"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /flats/{id}:
     parameters:
-      - $ref: '#/components/parameters/Id'
+      - $ref: "#/components/parameters/Id"
     get:
-      tags: [Flats]
+      tags:
+        - Flats
       operationId: getFlat
       summary: Получить квартиру по идентификатору
       description: Возвращает квартиру по `id`.
       responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
     put:
-      tags: [Flats]
+      tags:
+        - Flats
       operationId: replaceFlat
       summary: Обновить квартиру
-      description: |
-        Заменяет данные квартиры значениями из `flat`, сохраняя `id` и `creationDate`.
+      description: Заменяет данные квартиры значениями из `flat`, сохраняя `id` и `creationDate`.
       parameters:
-        - $ref: '#/components/parameters/FlatInput'
+        - $ref: "#/components/parameters/FlatInput"
       responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '414':
-          $ref: '#/components/responses/UriTooLong'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "414":
+          $ref: "#/components/responses/UriTooLong"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
     delete:
-      tags: [Flats]
+      tags:
+        - Flats
       operationId: deleteFlat
       summary: Удалить квартиру
       description: Удаляет квартиру по `id`.
       responses:
-        '204':
+        "204":
           description: Квартира удалена
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /flats/min-creation-date:
     get:
-      tags: [Statistics]
+      tags:
+        - Statistics
       operationId: getFlatWithMinCreationDate
       summary: Получить квартиру с минимальной датой создания
-      description: |
-        Возвращает одну из квартир с самой ранней creationDate. Если квартир нет — 404.
+      description: Возвращает одну из квартир с самой ранней `creationDate`. Если квартир нет — `404`.
       responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /flats/max-new:
     get:
-      tags: [Statistics]
+      tags:
+        - Statistics
       operationId: getFlatWithMaxNew
       summary: Получить квартиру с максимальным значением new
       description: |
@@ -208,38 +215,39 @@ paths:
 
         Если квартир нет — `404`.
       responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /flats/count-by-transport:
     get:
-      tags: [Statistics]
+      tags:
+        - Statistics
       operationId: countFlatsByTransport
       summary: Посчитать квартиры с заданным transport
-      description: |
-        Считает квартиры с указанным transport. Если совпадений нет, возвращает count=0.
+      description: Считает квартиры с указанным `transport`. Если совпадений нет, возвращает `count=0`.
       parameters:
         - name: transport
           in: query
           required: true
-          description: 'JSON-значение в URL: transport=%22FEW%22 или transport=null. null отличается от NONE.'
+          description: "JSON-значение в URL: transport=%22FEW%22 или transport=null. null отличается от NONE."
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transport'
+                $ref: "#/components/schemas/Transport"
               example: FEW
       responses:
-        '200':
+        "200":
           description: Число совпадающих квартир
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: false
-                required: [count]
+                required:
+                  - count
                 properties:
                   count:
                     type: integer
@@ -247,65 +255,10 @@ paths:
                     minimum: 0
               example:
                 count: 3
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /agency/get-cheapest/{id1}/{id2}:
-    get:
-      tags: [Agency]
-      operationId: getCheapestFlat
-      summary: Выбрать более дешёвую из двух квартир
-      description: |
-        Получает две квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с меньшим `price`.
-
-        - При равной стоимости возвращает первую.
-        - `id` могут повторяться.
-        - Если хотя бы одна квартира не найдена — `404`.
-      parameters:
-        - $ref: '#/components/parameters/Id1'
-        - $ref: '#/components/parameters/Id2'
-      responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '502':
-          $ref: '#/components/responses/UpstreamError'
-        '504':
-          $ref: '#/components/responses/UpstreamTimeout'
-  /agency/get-most-expensive/{id1}/{id2}/{id3}:
-    get:
-      tags: [Agency]
-      operationId: getMostExpensiveFlat
-      summary: Выбрать самую дорогую из трёх квартир
-      description: |
-        Получает три квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с наибольшим `price`.
-
-        - При равной стоимости возвращает первую из самых дорогих.
-        - `id` могут повторяться.
-        - Если хотя бы одна квартира не найдена — `404`.
-      parameters:
-        - $ref: '#/components/parameters/Id1'
-        - $ref: '#/components/parameters/Id2'
-        - $ref: '#/components/parameters/Id3'
-      responses:
-        '200':
-          $ref: '#/components/responses/FlatFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '502':
-          $ref: '#/components/responses/UpstreamError'
-        '504':
-          $ref: '#/components/responses/UpstreamTimeout'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   parameters:
     Id:
@@ -314,28 +267,7 @@ components:
       required: true
       description: Идентификатор квартиры
       schema:
-        $ref: '#/components/schemas/PositiveLong'
-    Id1:
-      name: id1
-      in: path
-      required: true
-      description: Идентификатор первой квартиры
-      schema:
-        $ref: '#/components/schemas/PositiveLong'
-    Id2:
-      name: id2
-      in: path
-      required: true
-      description: Идентификатор второй квартиры
-      schema:
-        $ref: '#/components/schemas/PositiveLong'
-    Id3:
-      name: id3
-      in: path
-      required: true
-      description: Идентификатор третьей квартиры
-      schema:
-        $ref: '#/components/schemas/PositiveLong'
+        $ref: "#/components/schemas/PositiveLong"
     FlatInput:
       name: flat
       in: query
@@ -348,12 +280,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/FlatInput'
+            $ref: "#/components/schemas/FlatInput"
           example:
             name: Квартира на Невском
-            coordinates: {x: 30.31, y: 59.93}
+            coordinates:
+              x: 30.31
+              y: 59.93
             area: 54
-            price: 8500000.50
+            price: 8500000.5
             numberOfRooms: 2
             new: false
             view: YARD
@@ -370,49 +304,52 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Flat'
+            $ref: "#/components/schemas/Flat"
     BadRequest:
-      description: Ошибка в параметрах или данных квартиры
+      description: Неверный формат или значение URL-параметра
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: numberOfRooms должно быть от 1 до 8}
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Параметр sort имеет неверный формат
+    UnprocessableEntity:
+      description: Данные квартиры нарушают ограничения модели
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: numberOfRooms должно быть от 1 до 8
     NotFound:
       description: Квартира не найдена; для min-creation-date и max-new — коллекция пуста
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: Квартира не найдена}
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Квартира не найдена
     UriTooLong:
       description: URL превышает допустимую длину
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: Слишком длинный URL}
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Слишком длинный URL
     InternalError:
       description: Внутренняя ошибка сервиса
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: Внутренняя ошибка сервиса}
-    UpstreamError:
-      description: Первый сервис недоступен, вернул ошибку (кроме 404) или некорректный ответ
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: Ошибка обращения к сервису квартир}
-    UpstreamTimeout:
-      description: Истекло время ожидания ответа первого сервиса
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example: {message: Истекло время ожидания сервиса квартир}
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Внутренняя ошибка сервиса
   schemas:
     PositiveLong:
       type: integer
@@ -446,7 +383,7 @@ components:
       minimum: 0.01
       multipleOf: 0.01
       description: Полная стоимость квартиры в рублях
-      example: 8500000.50
+      example: 8500000.5
     RoomCount:
       type: integer
       format: int32
@@ -455,19 +392,30 @@ components:
       example: 2
     View:
       type: string
-      enum: [YARD, NORMAL, GOOD, TERRIBLE]
+      enum:
+        - YARD
+        - NORMAL
+        - GOOD
+        - TERRIBLE
       description: Вид из окна
       example: YARD
     Transport:
       type: string
       nullable: true
-      enum: [FEW, NONE, LITTLE, ENOUGH, null]
+      enum:
+        - FEW
+        - NONE
+        - LITTLE
+        - ENOUGH
+        - null
       description: Транспортная доступность. null означает, что значение не указано.
       example: ENOUGH
     Coordinates:
       type: object
       additionalProperties: false
-      required: [x, y]
+      required:
+        - x
+        - y
       properties:
         x:
           type: number
@@ -480,50 +428,71 @@ components:
     House:
       type: object
       additionalProperties: false
-      required: [name, numberOfFloors]
+      required:
+        - name
+        - numberOfFloors
       description: Дом, в котором находится квартира
       properties:
         name:
           type: string
           example: Дом на Невском
         year:
-          $ref: '#/components/schemas/NullablePositiveLong'
+          $ref: "#/components/schemas/NullablePositiveLong"
         numberOfFloors:
-          $ref: '#/components/schemas/PositiveInteger'
+          $ref: "#/components/schemas/PositiveInteger"
         numberOfFlatsOnFloor:
-          $ref: '#/components/schemas/NullablePositiveInteger'
+          $ref: "#/components/schemas/NullablePositiveInteger"
         numberOfLifts:
-          $ref: '#/components/schemas/NullablePositiveInteger'
+          $ref: "#/components/schemas/NullablePositiveInteger"
     FlatInput:
       type: object
       additionalProperties: false
-      required: [name, coordinates, area, price, numberOfRooms, new, view, house]
+      required:
+        - name
+        - coordinates
+        - area
+        - price
+        - numberOfRooms
+        - new
+        - view
+        - house
       description: Данные для создания и обновления квартиры
       properties:
         name:
-          $ref: '#/components/schemas/FlatName'
+          $ref: "#/components/schemas/FlatName"
         coordinates:
-          $ref: '#/components/schemas/Coordinates'
+          $ref: "#/components/schemas/Coordinates"
         area:
-          $ref: '#/components/schemas/PositiveLong'
+          $ref: "#/components/schemas/PositiveLong"
         price:
-          $ref: '#/components/schemas/Price'
+          $ref: "#/components/schemas/Price"
         numberOfRooms:
-          $ref: '#/components/schemas/RoomCount'
+          $ref: "#/components/schemas/RoomCount"
         new:
           type: boolean
           description: Новая ли квартира
           example: false
         view:
-          $ref: '#/components/schemas/View'
+          $ref: "#/components/schemas/View"
         transport:
-          $ref: '#/components/schemas/Transport'
+          $ref: "#/components/schemas/Transport"
         house:
-          $ref: '#/components/schemas/House'
+          $ref: "#/components/schemas/House"
     Flat:
       type: object
       additionalProperties: false
-      required: [id, name, coordinates, creationDate, area, price, numberOfRooms, new, view, transport, house]
+      required:
+        - id
+        - name
+        - coordinates
+        - creationDate
+        - area
+        - price
+        - numberOfRooms
+        - new
+        - view
+        - transport
+        - house
       properties:
         id:
           type: integer
@@ -533,78 +502,90 @@ components:
           description: Уникальный id, который сервер назначает при создании
           example: 1
         name:
-          $ref: '#/components/schemas/FlatName'
+          $ref: "#/components/schemas/FlatName"
         coordinates:
-          $ref: '#/components/schemas/Coordinates'
+          $ref: "#/components/schemas/Coordinates"
         creationDate:
           type: string
           format: date
           readOnly: true
           description: Дата создания (YYYY-MM-DD), назначается сервером по текущей дате
-          example: '2026-09-21'
+          example: 2026-09-21
         area:
-          $ref: '#/components/schemas/PositiveLong'
+          $ref: "#/components/schemas/PositiveLong"
         price:
-          $ref: '#/components/schemas/Price'
+          $ref: "#/components/schemas/Price"
         numberOfRooms:
-          $ref: '#/components/schemas/RoomCount'
+          $ref: "#/components/schemas/RoomCount"
         new:
           type: boolean
           example: false
         view:
-          $ref: '#/components/schemas/View'
+          $ref: "#/components/schemas/View"
         transport:
-          $ref: '#/components/schemas/Transport'
+          $ref: "#/components/schemas/Transport"
         house:
-          $ref: '#/components/schemas/House'
+          $ref: "#/components/schemas/House"
     FlatFilter:
       type: object
       additionalProperties: false
       description: Поля для фильтрации квартир
       properties:
         id:
-          $ref: '#/components/schemas/PositiveLong'
+          $ref: "#/components/schemas/PositiveLong"
         name:
-          $ref: '#/components/schemas/FlatName'
+          $ref: "#/components/schemas/FlatName"
         coordinates:
           type: object
           additionalProperties: false
           properties:
-            x: {type: number, format: float}
-            y: {type: number, format: double}
+            x:
+              type: number
+              format: float
+            y:
+              type: number
+              format: double
         creationDate:
           type: string
           format: date
         area:
-          $ref: '#/components/schemas/PositiveLong'
+          $ref: "#/components/schemas/PositiveLong"
         price:
-          $ref: '#/components/schemas/Price'
+          $ref: "#/components/schemas/Price"
         numberOfRooms:
-          $ref: '#/components/schemas/RoomCount'
+          $ref: "#/components/schemas/RoomCount"
         new:
           type: boolean
         view:
-          $ref: '#/components/schemas/View'
+          $ref: "#/components/schemas/View"
         transport:
-          $ref: '#/components/schemas/Transport'
+          $ref: "#/components/schemas/Transport"
         house:
           type: object
           additionalProperties: false
           properties:
-            name: {type: string}
+            name:
+              type: string
             year:
-              $ref: '#/components/schemas/NullablePositiveLong'
+              $ref: "#/components/schemas/NullablePositiveLong"
             numberOfFloors:
-              $ref: '#/components/schemas/PositiveInteger'
+              $ref: "#/components/schemas/PositiveInteger"
             numberOfFlatsOnFloor:
-              $ref: '#/components/schemas/NullablePositiveInteger'
+              $ref: "#/components/schemas/NullablePositiveInteger"
             numberOfLifts:
-              $ref: '#/components/schemas/NullablePositiveInteger'
+              $ref: "#/components/schemas/NullablePositiveInteger"
     Error:
       type: object
       additionalProperties: false
-      required: [message]
+      required:
+        - timestamp
+        - message
       properties:
+        timestamp:
+          type: string
+          format: date-time
+          pattern: Z$
+          description: Время ошибки в UTC
         message:
           type: string
           description: Причина ошибки

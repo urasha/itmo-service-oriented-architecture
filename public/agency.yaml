@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Agency Service
+  version: 1.0.0
+  description: API для сравнения квартир по цене.
+tags:
+  - name: Agency
+    description: Сравнение квартир по цене в рублях
+paths:
+  /agency/get-cheapest/{id1}/{id2}:
+    get:
+      tags:
+        - Agency
+      operationId: getCheapestFlat
+      summary: Выбрать более дешёвую из двух квартир
+      description: |
+        Получает две квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с меньшим `price`.
+
+        - При равной стоимости возвращает первую.
+        - `id` могут повторяться.
+        - Если хотя бы одна квартира не найдена — `404`.
+      parameters:
+        - $ref: "#/components/parameters/Id1"
+        - $ref: "#/components/parameters/Id2"
+      responses:
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+        "504":
+          $ref: "#/components/responses/UpstreamTimeout"
+  /agency/get-most-expensive/{id1}/{id2}/{id3}:
+    get:
+      tags:
+        - Agency
+      operationId: getMostExpensiveFlat
+      summary: Выбрать самую дорогую из трёх квартир
+      description: |
+        Получает три квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с наибольшим `price`.
+
+        - При равной стоимости возвращает первую из самых дорогих.
+        - `id` могут повторяться.
+        - Если хотя бы одна квартира не найдена — `404`.
+      parameters:
+        - $ref: "#/components/parameters/Id1"
+        - $ref: "#/components/parameters/Id2"
+        - $ref: "#/components/parameters/Id3"
+      responses:
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+        "504":
+          $ref: "#/components/responses/UpstreamTimeout"
+components:
+  parameters:
+    Id1:
+      name: id1
+      in: path
+      required: true
+      description: Идентификатор первой квартиры
+      schema:
+        $ref: "#/components/schemas/PositiveLong"
+    Id2:
+      name: id2
+      in: path
+      required: true
+      description: Идентификатор второй квартиры
+      schema:
+        $ref: "#/components/schemas/PositiveLong"
+    Id3:
+      name: id3
+      in: path
+      required: true
+      description: Идентификатор третьей квартиры
+      schema:
+        $ref: "#/components/schemas/PositiveLong"
+  responses:
+    FlatFound:
+      description: Данные квартиры
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Flat"
+    BadRequest:
+      description: Некорректный идентификатор квартиры
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Идентификатор должен быть больше 0
+    NotFound:
+      description: Одна или несколько квартир не найдены
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Квартира не найдена
+    InternalError:
+      description: Внутренняя ошибка сервиса
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Внутренняя ошибка сервиса
+    UpstreamError:
+      description: Первый сервис недоступен, вернул ошибку (кроме 404) или некорректный ответ
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Ошибка обращения к сервису квартир
+    UpstreamTimeout:
+      description: Истекло время ожидания ответа первого сервиса
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            timestamp: 2026-09-22T12:34:56.789Z
+            message: Истекло время ожидания сервиса квартир
+  schemas:
+    PositiveLong:
+      type: integer
+      format: int64
+      minimum: 1
+      example: 1
+    PositiveInteger:
+      type: integer
+      format: int32
+      minimum: 1
+      example: 5
+    NullablePositiveLong:
+      type: integer
+      format: int64
+      minimum: 1
+      nullable: true
+      example: 1905
+    NullablePositiveInteger:
+      type: integer
+      format: int32
+      minimum: 1
+      nullable: true
+      example: 2
+    FlatName:
+      type: string
+      minLength: 1
+      description: Название квартиры
+      example: Квартира на Невском
+    Price:
+      type: number
+      minimum: 0.01
+      multipleOf: 0.01
+      description: Полная стоимость квартиры в рублях
+      example: 8500000.5
+    RoomCount:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 8
+      example: 2
+    View:
+      type: string
+      enum:
+        - YARD
+        - NORMAL
+        - GOOD
+        - TERRIBLE
+      description: Вид из окна
+      example: YARD
+    Transport:
+      type: string
+      nullable: true
+      enum:
+        - FEW
+        - NONE
+        - LITTLE
+        - ENOUGH
+        - null
+      description: Транспортная доступность. null означает, что значение не указано.
+      example: ENOUGH
+    Coordinates:
+      type: object
+      additionalProperties: false
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: number
+          format: float
+          example: 30.31
+        y:
+          type: number
+          format: double
+          example: 59.93
+    House:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - numberOfFloors
+      description: Дом, в котором находится квартира
+      properties:
+        name:
+          type: string
+          example: Дом на Невском
+        year:
+          $ref: "#/components/schemas/NullablePositiveLong"
+        numberOfFloors:
+          $ref: "#/components/schemas/PositiveInteger"
+        numberOfFlatsOnFloor:
+          $ref: "#/components/schemas/NullablePositiveInteger"
+        numberOfLifts:
+          $ref: "#/components/schemas/NullablePositiveInteger"
+    Flat:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - coordinates
+        - creationDate
+        - area
+        - price
+        - numberOfRooms
+        - new
+        - view
+        - transport
+        - house
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          readOnly: true
+          description: Уникальный id, который сервер назначает при создании
+          example: 1
+        name:
+          $ref: "#/components/schemas/FlatName"
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+        creationDate:
+          type: string
+          format: date
+          readOnly: true
+          description: Дата создания (YYYY-MM-DD), назначается сервером по текущей дате
+          example: 2026-09-21
+        area:
+          $ref: "#/components/schemas/PositiveLong"
+        price:
+          $ref: "#/components/schemas/Price"
+        numberOfRooms:
+          $ref: "#/components/schemas/RoomCount"
+        new:
+          type: boolean
+          example: false
+        view:
+          $ref: "#/components/schemas/View"
+        transport:
+          $ref: "#/components/schemas/Transport"
+        house:
+          $ref: "#/components/schemas/House"
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - timestamp
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          pattern: Z$
+          description: Время ошибки в UTC
+        message:
+          type: string
+          description: Причина ошибки
