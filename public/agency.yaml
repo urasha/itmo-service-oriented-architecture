@@ -17,20 +17,20 @@ paths:
         Получает две квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с меньшим `price`.
 
         - При равной стоимости возвращает первую.
-        - `id` могут повторяться.
-        - Если хотя бы одна квартира не найдена — `404`.
+        - Если `id1 = id2`, сравнение не требуется: ответ `303 See Other` перенаправляет на `GET /flats/{id1}`.
+        - Если первый сервис сообщает, что коллекция квартир не найдена, возвращает `404`.
       parameters:
         - $ref: "#/components/parameters/Id1"
         - $ref: "#/components/parameters/Id2"
       responses:
         "200":
           $ref: "#/components/responses/FlatFound"
+        "303":
+          $ref: "#/components/responses/CheapestRedirect"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
         "502":
           $ref: "#/components/responses/UpstreamError"
         "504":
@@ -45,8 +45,8 @@ paths:
         Получает три квартиры через `GET /flats/{id}` первого сервиса и выбирает квартиру с наибольшим `price`.
 
         - При равной стоимости возвращает первую из самых дорогих.
-        - `id` могут повторяться.
-        - Если хотя бы одна квартира не найдена — `404`.
+        - Если `id1 = id2 = id3`, сравнение не требуется: ответ `303 See Other` перенаправляет на `GET /flats/{id1}`.
+        - Если первый сервис сообщает, что коллекция квартир не найдена, возвращает `404`.
       parameters:
         - $ref: "#/components/parameters/Id1"
         - $ref: "#/components/parameters/Id2"
@@ -54,12 +54,12 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/FlatFound"
+        "303":
+          $ref: "#/components/responses/MostExpensiveRedirect"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
         "502":
           $ref: "#/components/responses/UpstreamError"
         "504":
@@ -94,8 +94,32 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Flat"
+    CheapestRedirect:
+      description: |
+        Если `id1 = id2`, сравнение не требуется.
+
+        `Location` содержит адрес `/flats/{id1}` первого сервиса.
+      headers:
+        Location:
+          description: URI квартиры в первом сервисе, например /flats/1
+          schema:
+            type: string
+            format: uri-reference
+          example: /flats/1
+    MostExpensiveRedirect:
+      description: |
+        Если `id1 = id2 = id3`, сравнение не требуется.
+
+        `Location` содержит адрес `/flats/{id1}` первого сервиса.
+      headers:
+        Location:
+          description: URI квартиры в первом сервисе, например /flats/1
+          schema:
+            type: string
+            format: uri-reference
+          example: /flats/1
     BadRequest:
-      description: Некорректный идентификатор квартиры
+      description: Неверный формат либо нарушение контракта объекта
       content:
         application/json:
           schema:
@@ -104,23 +128,14 @@ components:
             timestamp: 2026-09-22T12:34:56.789Z
             message: Идентификатор должен быть больше 0
     NotFound:
-      description: Одна или несколько квартир не найдены
+      description: Коллекция квартир первого сервиса не найдена
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           example:
             timestamp: 2026-09-22T12:34:56.789Z
-            message: Квартира не найдена
-    InternalError:
-      description: Внутренняя ошибка сервиса
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-          example:
-            timestamp: 2026-09-22T12:34:56.789Z
-            message: Внутренняя ошибка сервиса
+            message: Коллекция квартир не найдена
     UpstreamError:
       description: Первый сервис недоступен, вернул ошибку (кроме 404) или некорректный ответ
       content:

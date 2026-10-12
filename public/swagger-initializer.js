@@ -8,7 +8,7 @@ window.onload = function () {
     dom_id: '#swagger-ui',
     deepLinking: true,
     validatorUrl: null,
-    supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
+    supportedSubmitMethods: ['get', 'post', 'put', 'patch', 'delete'],
     tryItOutEnabled: true,
     docExpansion: 'list',
     defaultModelsExpandDepth: 1,

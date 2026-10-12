@@ -105,8 +105,8 @@ paths:
                   $ref: "#/components/schemas/Flat"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       tags:
         - Flats
@@ -124,18 +124,14 @@ paths:
               schema:
                 type: string
                 format: uri-reference
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Flat"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "414":
           $ref: "#/components/responses/UriTooLong"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /flats/{id}:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -152,8 +148,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
     put:
       tags:
         - Flats
@@ -173,8 +167,29 @@ paths:
           $ref: "#/components/responses/UriTooLong"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "500":
-          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - Flats
+      operationId: patchFlat
+      summary: Частично обновить квартиру
+      description: |
+        Изменяет только поля, переданные в параметре `flat`. Для `coordinates` и `house`
+        изменяются только переданные вложенные поля. Остальные значения, включая `id`
+        и `creationDate`, сохраняются. Пустой объект и передача `id` или `creationDate`
+        нарушают контракт запроса.
+      parameters:
+        - $ref: "#/components/parameters/FlatPatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/FlatFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "414":
+          $ref: "#/components/responses/UriTooLong"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
     delete:
       tags:
         - Flats
@@ -183,27 +198,25 @@ paths:
       description: Удаляет квартиру по `id`.
       responses:
         "204":
-          description: Квартира удалена
+          description: Нет содержимого
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /flats/min-creation-date:
     get:
       tags:
         - Statistics
       operationId: getFlatWithMinCreationDate
       summary: Получить квартиру с минимальной датой создания
-      description: Возвращает одну из квартир с самой ранней `creationDate`. Если квартир нет — `404`.
+      description: Возвращает одну из квартир с самой ранней `creationDate`. Если коллекция пуста — `204`; если коллекция не найдена — `404`.
       responses:
         "200":
           $ref: "#/components/responses/FlatFound"
+        "204":
+          description: Нет содержимого
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /flats/max-new:
     get:
       tags:
@@ -213,14 +226,14 @@ paths:
       description: |
         Возвращает любую квартиру с `new=true`, а если таких нет — с `new=false`.
 
-        Если квартир нет — `404`.
+        Если коллекция пуста — `204`; если коллекция не найдена — `404`.
       responses:
         "200":
           $ref: "#/components/responses/FlatFound"
+        "204":
+          description: Нет содержимого
         "404":
           $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /flats/count-by-transport:
     get:
       tags:
@@ -257,8 +270,8 @@ paths:
                 count: 3
         "400":
           $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   parameters:
     Id:
@@ -298,6 +311,19 @@ components:
               numberOfFloors: 5
               numberOfFlatsOnFloor: 3
               numberOfLifts: null
+    FlatPatch:
+      name: flat
+      in: query
+      required: true
+      description: Данные изменяемых полей квартиры в JSON с URL-кодированием. Тело запроса не используется.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FlatPatch"
+          example:
+            area: 60
+            house:
+              numberOfFloors: 6
   responses:
     FlatFound:
       description: Данные квартиры
@@ -306,7 +332,7 @@ components:
           schema:
             $ref: "#/components/schemas/Flat"
     BadRequest:
-      description: Неверный формат или значение URL-параметра
+      description: Неверный формат либо нарушение контракта объекта
       content:
         application/json:
           schema:
@@ -324,14 +350,14 @@ components:
             timestamp: 2026-09-22T12:34:56.789Z
             message: numberOfRooms должно быть от 1 до 8
     NotFound:
-      description: Квартира не найдена; для min-creation-date и max-new — коллекция пуста
+      description: Коллекция квартир не найдена
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           example:
             timestamp: 2026-09-22T12:34:56.789Z
-            message: Квартира не найдена
+            message: Коллекция квартир не найдена
     UriTooLong:
       description: URL превышает допустимую длину
       content:
@@ -341,15 +367,6 @@ components:
           example:
             timestamp: 2026-09-22T12:34:56.789Z
             message: Слишком длинный URL
-    InternalError:
-      description: Внутренняя ошибка сервиса
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-          example:
-            timestamp: 2026-09-22T12:34:56.789Z
-            message: Внутренняя ошибка сервиса
   schemas:
     PositiveLong:
       type: integer
@@ -478,6 +495,56 @@ components:
           $ref: "#/components/schemas/Transport"
         house:
           $ref: "#/components/schemas/House"
+    CoordinatesPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        x:
+          type: number
+          format: float
+        y:
+          type: number
+          format: double
+    HousePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+        year:
+          $ref: "#/components/schemas/NullablePositiveLong"
+        numberOfFloors:
+          $ref: "#/components/schemas/PositiveInteger"
+        numberOfFlatsOnFloor:
+          $ref: "#/components/schemas/NullablePositiveInteger"
+        numberOfLifts:
+          $ref: "#/components/schemas/NullablePositiveInteger"
+    FlatPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Только переданные поля изменяются; id и creationDate изменять нельзя
+      properties:
+        name:
+          $ref: "#/components/schemas/FlatName"
+        coordinates:
+          $ref: "#/components/schemas/CoordinatesPatch"
+        area:
+          $ref: "#/components/schemas/PositiveLong"
+        price:
+          $ref: "#/components/schemas/Price"
+        numberOfRooms:
+          $ref: "#/components/schemas/RoomCount"
+        new:
+          type: boolean
+        view:
+          $ref: "#/components/schemas/View"
+        transport:
+          $ref: "#/components/schemas/Transport"
+        house:
+          $ref: "#/components/schemas/HousePatch"
     Flat:
       type: object
       additionalProperties: false
