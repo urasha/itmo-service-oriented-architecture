@@ -1,0 +1,8 @@
+# UTF-8. URLs are service context roots; /flats/{id} is appended by the client.
+flats.internalBaseUrl=https://localhost:8443
+flats.publicBaseUrl=https://localhost:8443
+flats.trustStore=tls/flats-truststore.p12
+flats.trustStorePasswordFile=tls/flats-truststore.password
+flats.connectTimeoutMillis=3000
+flats.requestTimeoutMillis=5000
+cors.allowedOrigin=https://localhost:8443

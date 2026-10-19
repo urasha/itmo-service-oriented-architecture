@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://jetty.org/configure_10_0.dtd">
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+  <Set name="errorHandler"><New class="ru.itmo.soa.flats.jetty.JettyApiErrorHandler"/></Set>
+  <Ref refid="sslContextFactory">
+    <Set name="IncludeProtocols"><Array type="java.lang.String"><Item>TLSv1.2</Item><Item>TLSv1.3</Item></Array></Set>
+  </Ref>
+</Configure>

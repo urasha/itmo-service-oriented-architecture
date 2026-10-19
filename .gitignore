@@ -1,1 +1,11 @@
 node_modules/
+target/
+.runtime/
+*.p12
+*.jks
+*.key
+*.password
+.env
+deploy/local.env
+local-secrets.ini
+*.log
