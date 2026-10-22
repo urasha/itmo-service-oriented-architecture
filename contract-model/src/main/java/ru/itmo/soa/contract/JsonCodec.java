@@ -16,7 +16,13 @@ public final class JsonCodec {
     private JsonCodec() {}
 
     public static ObjectMapper createMapper() {
-        ObjectMapper mapper = JsonMapper.builder()
+        ObjectMapper mapper = createBaseMapper();
+        disableTypeCoercion(mapper);
+        return mapper;
+    }
+
+    private static ObjectMapper createBaseMapper() {
+        return JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                 .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
@@ -26,21 +32,29 @@ public final class JsonCodec {
                 .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .build();
-        for (LogicalType type : new LogicalType[]{LogicalType.Integer, LogicalType.Float, LogicalType.Boolean}) {
-            mapper.coercionConfigFor(type).setCoercion(CoercionInputShape.String, CoercionAction.Fail);
+    }
+
+    private static void disableTypeCoercion(ObjectMapper mapper) {
+        for (LogicalType type :
+                new LogicalType[] {LogicalType.Integer, LogicalType.Float, LogicalType.Boolean}) {
+            mapper.coercionConfigFor(type)
+                    .setCoercion(CoercionInputShape.String, CoercionAction.Fail);
         }
         mapper.coercionConfigFor(LogicalType.Textual)
                 .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail);
-        return mapper;
     }
 
     public static JsonNode parse(ObjectMapper mapper, String value) {
-        if (value == null || value.isBlank()) throw ValidationException.structure("Ожидается JSON-значение");
+        if (value == null || value.isBlank()) {
+            throw ValidationException.structure("Ожидается JSON-значение");
+        }
         try {
             JsonNode node = mapper.readTree(value);
-            if (node == null || node.isMissingNode()) throw ValidationException.structure("Ожидается JSON-значение");
+            if (node == null || node.isMissingNode()) {
+                throw ValidationException.structure("Ожидается JSON-значение");
+            }
             return node;
         } catch (JsonProcessingException e) {
             throw ValidationException.structure("Некорректный JSON");

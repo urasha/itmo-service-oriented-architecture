@@ -23,7 +23,7 @@ if (-not $ArchivePath) { $ArchivePath = Join-Path $runtimeDirectory 'soa-74611-h
 $manifest = Get-ChildItem -LiteralPath $stagingDirectory -File -Recurse | ForEach-Object {
     (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA512).Hash.ToLowerInvariant() + '  ' + $_.FullName.Substring($stagingDirectory.Length + 1).Replace('\','/')
 }
-[IO.File]::WriteAllLines((Join-Path $stagingDirectory 'SHA512SUMS'), $manifest, (New-Object Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText((Join-Path $stagingDirectory 'SHA512SUMS'), ($manifest -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
 Compress-Archive -Path (Join-Path $stagingDirectory '*') -DestinationPath $ArchivePath -Force
 $resolvedStagingDirectory = [IO.Path]::GetFullPath($stagingDirectory)
 $runtimePrefix = [IO.Path]::GetFullPath($runtimeDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

@@ -1,4 +1,4 @@
-package ru.itmo.soa.agency;
+package ru.itmo.soa.agency.api;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -8,18 +8,32 @@ import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import lombok.RequiredArgsConstructor;
+
+import ru.itmo.soa.agency.exception.AgencyErrorMapper;
+
 @PreMatching
+@RequiredArgsConstructor
 public final class AgencyHttpFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private final String allowedOrigin;
     private final AgencyErrorMapper errors;
-    public AgencyHttpFilter(String allowedOrigin, AgencyErrorMapper errors) { this.allowedOrigin = allowedOrigin; this.errors = errors; }
-    @Override public void filter(ContainerRequestContext request) {
-        if (!request.getSecurityContext().isSecure()) request.abortWith(Response.status(403).type(MediaType.APPLICATION_JSON)
-                .entity(errors.json(403, "Требуется HTTPS")).build());
-        else if ("OPTIONS".equals(request.getMethod()) && request.getHeaderString("Access-Control-Request-Method") != null)
+
+    @Override
+    public void filter(ContainerRequestContext request) {
+        if (!request.getSecurityContext().isSecure()) {
+            request.abortWith(
+                    Response.status(403)
+                            .type(MediaType.APPLICATION_JSON)
+                            .entity(errors.json(403, "Требуется HTTPS"))
+                            .build());
+        } else if ("OPTIONS".equals(request.getMethod())
+                && request.getHeaderString("Access-Control-Request-Method") != null) {
             request.abortWith(Response.noContent().build());
+        }
     }
-    @Override public void filter(ContainerRequestContext request, ContainerResponseContext response) {
+
+    @Override
+    public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         response.getHeaders().putSingle("Cache-Control", "no-store");
         response.getHeaders().add("Vary", "Origin");
         if (allowedOrigin.equals(request.getHeaderString("Origin"))) {

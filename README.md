@@ -12,11 +12,14 @@
 - `deploy/jetty/`, `deploy/tls/` — конфигурация Jetty и генерация TLS.
 - `docs/FIRST_SERVICE.md`, `docs/HELIOS_DEPLOYMENT.md` — подробности запуска и проверок.
 - `deploy/payara/`, `docs/AGENCY_SERVICE.md` — подготовка Payara, truststore, запуск обоих сервисов и интеграционные проверки.
+- [docs/HELIOS.md](docs/HELIOS.md) — рабочие адреса на Helios, SSH-туннель и команды управления.
 - [docs/CLIENT.md](docs/CLIENT.md) — использование и проверки клиента/Swagger; [docs/HELIOS_RUNBOOK.md](docs/HELIOS_RUNBOOK.md) — файлы для переноса и полные команды Helios.
 
 ## Локальный запуск (Windows PowerShell)
 
 Нужны JDK 17+ и Maven 3.9.x. Из корня проекта:
+
+Lombok подключён как annotation processor и не включается в WAR. В IDE должна быть включена обработка аннотаций.
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17' # замените на путь своего JDK
@@ -47,7 +50,7 @@ mvn verify -Pintegration
 
 POST/PUT/PATCH получают JSON в URL-параметре `flat`; тело не используется. `filter` и `transport` также соответствуют YAML. Поле price обязательно по существующей спецификации, хотя его не было в исходном Java-классе ЛР1. Ошибки `{timestamp, message}`, UTC: структура → 400, ограничения модели → 422, отсутствующий ID → 404, длинный URI → 414.
 
-Коллекция хранится в памяти и сбрасывается при рестарте. HTTP-коннектор не включён; servlet-фильтр дополнительно отвергает незащищённые запросы. Развёртывание на Helios не выполнялось.
+Коллекция хранится в памяти и сбрасывается при рестарте. HTTP-коннектор не включён; servlet-фильтр дополнительно отвергает незащищённые запросы. Оба сервиса развёрнуты на Helios; статический клиент: https://se.ifmo.ru/~s413022/soa-lab2/app/index.html. Для доступа к API откройте SSH-туннель по [инструкции](docs/HELIOS.md).
 
 ## Проверки и перенос
 
@@ -57,4 +60,4 @@ mvn verify '-Pintegration,agency-integration' '-Dagency.certificate=C:/path/to/a
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/package.ps1 -IncludeRuntimes
 ```
 
-132 Java-теста, 21 реальная HTTPS-проверка, 33 JS-теста и Chrome-проверка всех 11 операций/двух Swagger выполнялись локально. Подробности и намеренно отдельный upstream-unavailable тест — в docs/CLIENT.md. Пакет `.runtime/soa-74611-helios.zip` содержит WAR, deployment-сценарии, инструкции, SHA512SUMS и (с IncludeRuntimes) исходные архивы серверов. Секреты/готовые Windows-домены не включаются. Для переноса и запуска следуйте docs/HELIOS_RUNBOOK.md; Helios проверяет пользователь самостоятельно.
+Локальная Maven-сборка проходит 140 тестов, клиент — 33 JS-теста. Все 11 операций и обе спецификации Swagger проверены в Chrome с опубликованным фронтендом и API на Helios. Подробности — в [docs/HELIOS.md](docs/HELIOS.md). Пакет `.runtime/soa-74611-helios.zip` содержит WAR, deployment-сценарии, инструкции, SHA512SUMS и (с IncludeRuntimes) исходные архивы серверов. Секреты/готовые Windows-домены не включаются.

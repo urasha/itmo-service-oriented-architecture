@@ -1,6 +1,8 @@
 package ru.itmo.soa.contract;
 
-/** Framework-independent distinction between malformed input and model constraints. */
+import lombok.Getter;
+
+@Getter
 public final class ValidationException extends RuntimeException {
     private final boolean constraint;
 
@@ -9,7 +11,11 @@ public final class ValidationException extends RuntimeException {
         this.constraint = constraint;
     }
 
-    public boolean isConstraint() { return constraint; }
-    public static ValidationException structure(String message) { return new ValidationException(message, false); }
-    public static ValidationException constraint(String message) { return new ValidationException(message, true); }
+    public static ValidationException structure(String message) {
+        return new ValidationException(message, false);
+    }
+
+    public static ValidationException constraint(String message) {
+        return new ValidationException(message, true);
+    }
 }
