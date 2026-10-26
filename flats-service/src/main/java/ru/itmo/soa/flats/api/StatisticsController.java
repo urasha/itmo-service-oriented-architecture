@@ -11,6 +11,7 @@ import ru.itmo.soa.contract.Flat;
 import ru.itmo.soa.flats.service.FlatService;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -22,21 +23,24 @@ public final class StatisticsController {
 
     @GetMapping("/min-creation-date")
     public ResponseEntity<Flat> minCreationDate() {
-        return service.minCreationDate()
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.noContent().build());
+        return flatResponse(service.minCreationDate());
     }
 
     @GetMapping("/max-new")
     public ResponseEntity<Flat> maxNew() {
-        return service.maxNew()
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.noContent().build());
+        return flatResponse(service.maxNew());
     }
 
     @GetMapping("/count-by-transport")
     public Map<String, Long> count(HttpServletRequest request) {
         QueryParser query = new QueryParser(request, Set.of("transport"), Set.of());
         return Map.of("count", service.count(decoder.transport(query.required("transport"))));
+    }
+
+    private ResponseEntity<Flat> flatResponse(Optional<Flat> flat) {
+        if (flat.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(flat.get());
     }
 }

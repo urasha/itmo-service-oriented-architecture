@@ -36,7 +36,11 @@ public final class QueryParser {
             throw ApiException.badRequest("Неизвестный параметр: " + key);
         }
         String value = pair.length == 2 ? URLDecoder.decode(pair[1], StandardCharsets.UTF_8) : "";
-        List<String> values = parameters.computeIfAbsent(key, ignored -> new ArrayList<>());
+        List<String> values = parameters.get(key);
+        if (values == null) {
+            values = new ArrayList<>();
+            parameters.put(key, values);
+        }
         if (!values.isEmpty() && !repeated.contains(key)) {
             throw ApiException.badRequest("Повтор параметра: " + key);
         }

@@ -204,7 +204,19 @@ class FlatsClientTest {
 
     @ParameterizedTest
     @ValueSource(
-            strings = {"id", "creationDate", "transport", "name", "coordinates", "new", "house"})
+            strings = {
+                "id",
+                "creationDate",
+                "transport",
+                "name",
+                "coordinates",
+                "area",
+                "price",
+                "numberOfRooms",
+                "new",
+                "view",
+                "house"
+            })
     void rejectsMissingRequiredProperties(String field) throws Exception {
         var mapper = JsonCodec.createMapper();
         var node = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(body);

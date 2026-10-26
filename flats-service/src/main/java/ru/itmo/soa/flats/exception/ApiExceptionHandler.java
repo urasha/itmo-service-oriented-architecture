@@ -22,6 +22,11 @@ import java.util.logging.Level;
 public final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private final Clock clock;
 
+    @ExceptionHandler(FlatNotFoundException.class)
+    public ResponseEntity<Object> notFound(FlatNotFoundException e) {
+        return error(404, e.getMessage());
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Object> api(ApiException e) {
         return error(e.status(), e.getMessage());

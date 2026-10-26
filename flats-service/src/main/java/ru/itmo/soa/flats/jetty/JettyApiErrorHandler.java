@@ -13,7 +13,6 @@ import java.time.Instant;
 public final class JettyApiErrorHandler extends ErrorHandler {
     @Override
     public boolean errorPageForMethod(String method) {
-
         return true;
     }
 

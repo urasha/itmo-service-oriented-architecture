@@ -30,7 +30,8 @@ class ConfigureDomain {
         Path pidFile = domain.resolve("config/pid");
         if (Files.exists(pidFile)) {
             long pid = Long.parseLong(Files.readString(pidFile).trim());
-            if (ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false)) {
+            var process = ProcessHandle.of(pid);
+            if (process.isPresent() && process.get().isAlive()) {
                 throw new IllegalStateException("Stop the domain before configuration");
             }
         }

@@ -17,15 +17,30 @@ import java.util.concurrent.*;
 
 class FlatConcurrencyTest {
     @Test
-    void concurrentCreatesAndDeepPatchesDoNotLoseData() throws Exception {
-        var decoder = new FlatInputDecoder(JsonCodec.createMapper());
+    void snapshotKeepsOldValuesAfterRepositoryChanges() {
+        var input = new FlatInputDecoder(JsonCodec.createMapper()).input(FlatApiTest.VALID);
         var repository = new InMemoryFlatRepository();
         var service =
                 new FlatService(
                         repository,
                         new FlatPatchMapper(JsonCodec.createMapper()),
                         Clock.systemUTC());
-        var input = decoder.input(decoder.read(FlatApiTest.VALID, FlatValidator.Mode.INPUT));
+        var flat = service.create(input);
+        var snapshot = repository.snapshot();
+        service.delete(flat.id());
+        service.create(input);
+        assertEquals(java.util.List.of(flat), snapshot);
+        assertThrows(UnsupportedOperationException.class, snapshot::clear);
+    }
+
+    @Test
+    void concurrentCreatesAndDeepPatchesDoNotLoseData() throws Exception {
+        var decoder = new FlatInputDecoder(JsonCodec.createMapper());
+        var repository = new InMemoryFlatRepository();
+        var patchMapper = new FlatPatchMapper(JsonCodec.createMapper());
+        var service = new FlatService(repository, patchMapper, Clock.systemUTC());
+        var anotherService = new FlatService(repository, patchMapper, Clock.systemUTC());
+        var input = decoder.input(FlatApiTest.VALID);
         ExecutorService executor = Executors.newFixedThreadPool(8);
         try {
             var jobs = new ArrayList<Callable<Long>>();
@@ -53,7 +68,7 @@ class FlatConcurrencyTest {
                     executor.submit(
                             () -> {
                                 start.await();
-                                return service.patch(id, floors);
+                                return anotherService.patch(id, floors);
                             });
             start.countDown();
             a.get();

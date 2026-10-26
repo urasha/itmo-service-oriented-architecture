@@ -12,7 +12,7 @@ import ru.itmo.soa.flats.repository.InMemoryFlatRepository;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -32,12 +32,15 @@ public final class FlatService {
     }
 
     public Flat replace(long id, FlatInput input) {
-        return repository.update(id, old -> Flat.from(old.id(), old.creationDate(), input));
+        return repository.replace(id, input);
     }
 
     public Flat patch(long id, ObjectNode patch) {
-        return repository.update(
-                id, old -> Flat.from(old.id(), old.creationDate(), patchMapper.merge(old, patch)));
+        synchronized (repository) {
+            Flat current = repository.get(id);
+            FlatInput updated = patchMapper.merge(current.toInput(), patch);
+            return repository.replace(id, updated);
+        }
     }
 
     public void delete(long id) {
@@ -49,16 +52,35 @@ public final class FlatService {
     }
 
     public Optional<Flat> minCreationDate() {
-        return repository.snapshot().stream().min(Comparator.comparing(Flat::creationDate));
+        Flat earliest = null;
+        for (Flat flat : repository.snapshot()) {
+            if (earliest == null || flat.creationDate().isBefore(earliest.creationDate())) {
+                earliest = flat;
+            }
+        }
+        return Optional.ofNullable(earliest);
     }
 
     public Optional<Flat> maxNew() {
-        return repository.snapshot().stream().max(Comparator.comparing(Flat::isNew));
+        List<Flat> flats = repository.snapshot();
+        if (flats.isEmpty()) {
+            return Optional.empty();
+        }
+        for (Flat flat : flats) {
+            if (flat.isNew()) {
+                return Optional.of(flat);
+            }
+        }
+        return Optional.of(flats.get(0));
     }
 
     public long count(Transport transport) {
-        return repository.snapshot().stream()
-                .filter(f -> Objects.equals(f.transport(), transport))
-                .count();
+        long count = 0;
+        for (Flat flat : repository.snapshot()) {
+            if (Objects.equals(flat.transport(), transport)) {
+                count++;
+            }
+        }
+        return count;
     }
 }

@@ -15,6 +15,33 @@ import java.util.List;
 import java.util.stream.Stream;
 
 class FlatQueryTest {
+    @Test
+    void signedZeroUsesNumericEqualityAndIdTieBreaker() {
+        Flat first = withX(1, 0.0f);
+        Flat second = withX(2, -0.0f);
+        assertEquals(List.of(first, second), select(List.of(second, first), "coordinates.x:asc"));
+        assertEquals(List.of(first, second), select(List.of(second, first), "coordinates.x:desc"));
+        var filter = JsonCodec.parse(JsonCodec.createMapper(), "{\"coordinates\":{\"x\":0}}");
+        assertEquals(
+                List.of(first, second),
+                FlatQuery.of(1, 20, filter, List.of()).select(List.of(second, first)).items());
+    }
+
+    private Flat withX(long id, float x) {
+        return new Flat(
+                id,
+                "A",
+                new Coordinates(x, 1),
+                LocalDate.of(2026, 1, 1),
+                10,
+                BigDecimal.ONE,
+                1,
+                false,
+                View.YARD,
+                null,
+                new House("A", null, 1, null, null));
+    }
+
     private static Flat flat(long id, String name, Long year, Transport transport, View view) {
         return new Flat(
                 id,

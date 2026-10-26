@@ -17,6 +17,11 @@ public record Flat(
         View view,
         Transport transport,
         House house) {
+    public FlatInput toInput() {
+        return new FlatInput(
+                name, coordinates, area, price, numberOfRooms, isNew, view, transport, house);
+    }
+
     public static Flat from(long id, LocalDate date, FlatInput input) {
         return new Flat(
                 id,

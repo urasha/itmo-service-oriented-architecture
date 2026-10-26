@@ -1,12 +1,11 @@
 package ru.itmo.soa.agency.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ru.itmo.soa.agency.config.AgencySettings;
 import ru.itmo.soa.agency.exception.AgencyException;
+import ru.itmo.soa.agency.service.FlatSource;
 import ru.itmo.soa.contract.Flat;
 import ru.itmo.soa.contract.FlatValidator;
 import ru.itmo.soa.contract.JsonCodec;
@@ -22,7 +21,6 @@ import java.nio.file.Files;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
-public final class FlatsClient {
+public final class FlatsClient implements FlatSource {
     private final HttpClient client;
     private final AgencySettings settings;
     private final ObjectMapper mapper;
@@ -73,6 +71,7 @@ public final class FlatsClient {
         }
     }
 
+    @Override
     public Flat get(long id) {
         HttpResponse<String> response = send(flatRequest(id));
         validateResponse(response);
@@ -105,7 +104,6 @@ public final class FlatsClient {
     }
 
     private HttpResponse<String> send(HttpRequest request) {
-
         CompletableFuture<HttpResponse<String>> pending =
                 client.sendAsync(
                         request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -113,14 +111,14 @@ public final class FlatsClient {
             return pending.get(settings.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             pending.cancel(true);
-            throw AgencyException.timeout();
+            throw AgencyException.timeout(e);
         } catch (InterruptedException e) {
             pending.cancel(true);
             Thread.currentThread().interrupt();
-            throw AgencyException.upstream();
+            throw AgencyException.upstream(e);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof HttpTimeoutException) {
-                throw AgencyException.timeout();
+                throw AgencyException.timeout(e.getCause());
             }
             throw AgencyException.upstream(e.getCause());
         }
@@ -143,7 +141,7 @@ public final class FlatsClient {
     private Flat readFlat(String body, long expectedId) {
         try {
             var node = JsonCodec.parse(mapper, body);
-            validateFlat(node);
+            FlatValidator.validate(node, FlatValidator.Mode.OUTPUT);
             Flat flat = mapper.treeToValue(node, Flat.class);
             if (flat.id() != expectedId) {
                 throw AgencyException.upstream();
@@ -152,15 +150,5 @@ public final class FlatsClient {
         } catch (JsonProcessingException | ValidationException | IllegalArgumentException e) {
             throw AgencyException.upstream(e);
         }
-    }
-
-    private void validateFlat(JsonNode node) {
-        FlatValidator.validate(node, FlatValidator.Mode.FILTER);
-        if (!node.has("id") || !node.has("creationDate") || !node.has("transport")) {
-            throw AgencyException.upstream();
-        }
-        ObjectNode input = ((ObjectNode) node).deepCopy();
-        input.remove(List.of("id", "creationDate"));
-        FlatValidator.validate(input, FlatValidator.Mode.INPUT);
     }
 }

@@ -24,6 +24,31 @@ class FlatValidatorTest {
         assertDoesNotThrow(() -> FlatValidator.validate(input(), FlatValidator.Mode.INPUT));
     }
 
+    @Test
+    void validatesCompleteResponseWithGeneratedFieldsAndNullTransport() {
+        ObjectNode response = input();
+        response.put("id", 1);
+        response.put("creationDate", "2026-10-26");
+        response.putNull("transport");
+        assertDoesNotThrow(() -> FlatValidator.validate(response, FlatValidator.Mode.OUTPUT));
+        assertThrows(
+                ValidationException.class,
+                () -> FlatValidator.validate(response, FlatValidator.Mode.INPUT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"house", "coordinates"})
+    void responseRequiresCompleteNestedObjects(String field) {
+        ObjectNode response = input();
+        response.put("id", 1);
+        response.put("creationDate", "2026-10-26");
+        response.putNull("transport");
+        response.putObject(field);
+        assertThrows(
+                ValidationException.class,
+                () -> FlatValidator.validate(response, FlatValidator.Mode.OUTPUT));
+    }
+
     @ParameterizedTest
     @ValueSource(
             strings = {

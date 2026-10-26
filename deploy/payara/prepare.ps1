@@ -21,8 +21,8 @@ if (-not $DomainsDirectory) { $DomainsDirectory = Join-Path $root '.runtime/paya
 if (-not $FlatsCertificate) { $FlatsCertificate = Join-Path $root '.runtime/jetty-base/etc/flats.crt' }
 $cli = Join-Path $PayaraHome 'glassfish/lib/client/appserver-cli.jar'
 $java = Join-Path $env:JAVA_HOME 'bin/java.exe'
-if (($PayaraHome + $DomainsDirectory) -match '[^\x00-\x7F]') { throw 'On Windows use ASCII paths for PayaraHome and DomainsDirectory (Payara CLI corrupts non-ASCII paths). See docs/AGENCY_SERVICE.md.' }
-if (-not (Test-Path -LiteralPath $cli)) { throw 'Install Payara Server 6.2025.10 and pass -PayaraHome (see docs/AGENCY_SERVICE.md).' }
+if (($PayaraHome + $DomainsDirectory) -match '[^\x00-\x7F]') { throw 'On Windows use ASCII paths for PayaraHome and DomainsDirectory (Payara CLI corrupts non-ASCII paths). See docs/RUNNING.md.' }
+if (-not (Test-Path -LiteralPath $cli)) { throw 'Install Payara Server 6.2025.10 and pass -PayaraHome (see docs/RUNNING.md).' }
 if (-not (Test-Path -LiteralPath $FlatsCertificate)) { throw 'Prepare Jetty first or pass -FlatsCertificate.' }
 if ($DomainName -notmatch '^[a-zA-Z0-9_-]+$') { throw 'DomainName must be alphanumeric.' }
 [IO.Directory]::CreateDirectory($DomainsDirectory) | Out-Null

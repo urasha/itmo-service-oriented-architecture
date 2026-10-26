@@ -14,8 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import ru.itmo.soa.agency.config.AgencySettings;
 import ru.itmo.soa.agency.service.AgencyService;
-
-import java.util.Arrays;
+import ru.itmo.soa.contract.Flat;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,7 +28,12 @@ public final class AgencyResource {
     @Path("get-cheapest/{id1}/{id2}")
     public Response cheapest(@PathParam("id1") String id1, @PathParam("id2") String id2)
             throws JsonProcessingException {
-        return compare(true, AgencyService.id(id1), AgencyService.id(id2));
+        long firstId = AgencyIdParser.parse(id1);
+        long secondId = AgencyIdParser.parse(id2);
+        if (firstId == secondId) {
+            return redirect(firstId);
+        }
+        return flatResponse(service.getCheapest(firstId, secondId));
     }
 
     @GET
@@ -39,17 +43,20 @@ public final class AgencyResource {
             @PathParam("id2") String id2,
             @PathParam("id3") String id3)
             throws JsonProcessingException {
-        return compare(false, AgencyService.id(id1), AgencyService.id(id2), AgencyService.id(id3));
+        long firstId = AgencyIdParser.parse(id1);
+        long secondId = AgencyIdParser.parse(id2);
+        long thirdId = AgencyIdParser.parse(id3);
+        if (firstId == secondId && firstId == thirdId) {
+            return redirect(firstId);
+        }
+        return flatResponse(service.getMostExpensive(firstId, secondId, thirdId));
     }
 
-    private Response compare(boolean cheapest, long... ids) throws JsonProcessingException {
-        if (Arrays.stream(ids).allMatch(id -> id == ids[0])) {
-            return Response.seeOther(AgencySettings.flatUri(settings.publicBaseUrl(), ids[0]))
-                    .build();
-        }
-        return Response.ok(
-                        mapper.writeValueAsString(service.select(cheapest, ids)),
-                        MediaType.APPLICATION_JSON)
-                .build();
+    private Response redirect(long id) {
+        return Response.seeOther(AgencySettings.flatUri(settings.publicBaseUrl(), id)).build();
+    }
+
+    private Response flatResponse(Flat flat) throws JsonProcessingException {
+        return Response.ok(mapper.writeValueAsString(flat), MediaType.APPLICATION_JSON).build();
     }
 }

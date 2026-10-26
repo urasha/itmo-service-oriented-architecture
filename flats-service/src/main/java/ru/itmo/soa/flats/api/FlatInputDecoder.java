@@ -30,8 +30,8 @@ public final class FlatInputDecoder {
         }
     }
 
-    public FlatInput input(ObjectNode node) {
-        FlatValidator.validate(node, FlatValidator.Mode.INPUT);
+    public FlatInput input(String json) {
+        ObjectNode node = read(json, FlatValidator.Mode.INPUT);
         try {
             return mapper.treeToValue(node, FlatInput.class);
         } catch (JsonProcessingException e) {

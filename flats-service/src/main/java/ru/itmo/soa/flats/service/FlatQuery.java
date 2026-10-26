@@ -2,103 +2,139 @@ package ru.itmo.soa.flats.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+
 import ru.itmo.soa.contract.Flat;
-import ru.itmo.soa.flats.exception.ApiException;
+import ru.itmo.soa.contract.ValidationException;
+import ru.itmo.soa.flats.service.FlatFieldRegistry.Field;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
-public record FlatQuery(int page, int size, Predicate<Flat> filter, Comparator<Flat> sort) {
-    private record SortKey(String path, boolean descending) {}
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class FlatQuery {
+    private final int page;
+    private final int size;
+    private final List<Condition> conditions;
+    private final List<SortKey> sortKeys;
 
-    private record Condition(FlatFieldRegistry.Field field, Object expected) {
+    private record Condition(Field field, Object expected) {
         boolean matches(Flat flat) {
-            return FlatFieldRegistry.compare(field.get().apply(flat), expected, false) == 0;
+            return field.matches(flat, expected);
         }
     }
+
+    private record SortKey(Field field, boolean descending) {}
 
     public record Page(List<Flat> items, long total) {}
 
     public static FlatQuery of(int page, int size, JsonNode filter, List<String> sorts) {
-        return new FlatQuery(page, size, createFilter(filter), createSort(sorts));
-    }
-
-    private static Predicate<Flat> createFilter(JsonNode filter) {
-        List<Condition> conditions = new ArrayList<>();
-        if (filter != null) {
-            flatten(filter, "", conditions);
-        }
-        return flat -> conditions.stream().allMatch(condition -> condition.matches(flat));
-    }
-
-    private static Comparator<Flat> createSort(List<String> sorts) {
-        List<SortKey> keys = sortKeys(sorts);
-        return (first, second) -> compare(first, second, keys);
-    }
-
-    private static List<SortKey> sortKeys(List<String> sorts) {
-        List<SortKey> keys = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        for (String sort : sorts) {
-            SortKey key = parseSortKey(sort);
-            if (!seen.add(key.path)) {
-                throw ApiException.badRequest("sort: повтор поля " + key.path);
-            }
-            for (String path : FlatFieldRegistry.expand(key.path)) {
-                keys.add(new SortKey(path, key.descending));
-            }
-        }
-        if (!seen.contains("id")) {
-            keys.add(new SortKey("id", false));
-        }
-        return keys;
-    }
-
-    private static SortKey parseSortKey(String sort) {
-        String[] parts = sort.split(":", -1);
-        if (parts.length != 2 || !(parts[1].equals("asc") || parts[1].equals("desc"))) {
-            throw ApiException.badRequest("sort: ожидается поле:asc либо поле:desc");
-        }
-        return new SortKey(parts[0], parts[1].equals("desc"));
-    }
-
-    private static int compare(Flat first, Flat second, List<SortKey> keys) {
-        for (SortKey key : keys) {
-            var field = FlatFieldRegistry.field(key.path);
-            int result =
-                    FlatFieldRegistry.compare(
-                            field.get().apply(first), field.get().apply(second), key.descending);
-            if (result != 0) {
-                return result;
-            }
-        }
-        return 0;
-    }
-
-    private static void flatten(JsonNode node, String prefix, List<Condition> conditions) {
-        for (var entry : node.properties()) {
-            String path = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
-            if (entry.getValue().isObject()) {
-                flatten(entry.getValue(), path, conditions);
-            } else {
-                var field = FlatFieldRegistry.field(path);
-                conditions.add(new Condition(field, field.value(entry.getValue())));
-            }
-        }
+        return new FlatQuery(page, size, readConditions(filter), readSortKeys(sorts));
     }
 
     public Page select(List<Flat> snapshot) {
-        List<Flat> matches = snapshot.stream().filter(filter).sorted(sort).toList();
+        List<Flat> matches = filter(snapshot);
+        matches.sort(new FlatComparator(sortKeys));
+        return selectPage(matches);
+    }
+
+    private List<Flat> filter(List<Flat> snapshot) {
+        List<Flat> result = new ArrayList<>();
+        for (Flat flat : snapshot) {
+            if (matchesAllConditions(flat)) {
+                result.add(flat);
+            }
+        }
+        return result;
+    }
+
+    private boolean matchesAllConditions(Flat flat) {
+        for (Condition condition : conditions) {
+            if (!condition.matches(flat)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Page selectPage(List<Flat> matches) {
         long offset = (long) (page - 1) * size;
         if (offset >= matches.size()) {
             return new Page(List.of(), matches.size());
         }
         int start = (int) offset;
         int end = (int) Math.min(offset + size, matches.size());
-        return new Page(matches.subList(start, end), matches.size());
+        return new Page(List.copyOf(matches.subList(start, end)), matches.size());
+    }
+
+    private static List<Condition> readConditions(JsonNode filter) {
+        List<Condition> conditions = new ArrayList<>();
+        if (filter != null) {
+            collectConditions(filter, "", conditions);
+        }
+        return List.copyOf(conditions);
+    }
+
+    private static void collectConditions(
+            JsonNode node, String prefix, List<Condition> conditions) {
+        for (var entry : node.properties()) {
+            String path = entry.getKey();
+            if (!prefix.isEmpty()) {
+                path = prefix + "." + path;
+            }
+            if (entry.getValue().isObject()) {
+                collectConditions(entry.getValue(), path, conditions);
+            } else {
+                Field field = FlatFieldRegistry.field(path);
+                conditions.add(new Condition(field, field.read(entry.getValue())));
+            }
+        }
+    }
+
+    private static List<SortKey> readSortKeys(List<String> sorts) {
+        List<SortKey> keys = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (String sort : sorts) {
+            addSortKey(sort, keys, seen);
+        }
+        if (!seen.contains("id")) {
+            keys.add(new SortKey(Field.ID, false));
+        }
+        return List.copyOf(keys);
+    }
+
+    private static void addSortKey(String sort, List<SortKey> keys, Set<String> seen) {
+        String[] parts = sort.split(":", -1);
+        if (parts.length != 2 || !(parts[1].equals("asc") || parts[1].equals("desc"))) {
+            throw ValidationException.structure("sort: ожидается поле:asc либо поле:desc");
+        }
+        String path = parts[0];
+        if (!seen.add(path)) {
+            throw ValidationException.structure("sort: повтор поля " + path);
+        }
+        boolean descending = parts[1].equals("desc");
+        for (Field field : FlatFieldRegistry.expand(path)) {
+            keys.add(new SortKey(field, descending));
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static final class FlatComparator implements Comparator<Flat> {
+        private final List<SortKey> keys;
+
+        @Override
+        public int compare(Flat first, Flat second) {
+            for (SortKey key : keys) {
+                int result = key.field.compare(first, second, key.descending);
+                if (result != 0) {
+                    return result;
+                }
+            }
+            return 0;
+        }
     }
 }

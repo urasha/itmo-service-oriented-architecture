@@ -23,7 +23,7 @@ public final class AgencyApplication extends Application {
         var errors = new AgencyErrorMapper(mapper);
         singletons =
                 Set.of(
-                        new AgencyResource(new AgencyService(client::get), settings, mapper),
+                        new AgencyResource(new AgencyService(client), settings, mapper),
                         errors,
                         new AgencyHttpFilter(settings.allowedOrigin(), errors));
     }

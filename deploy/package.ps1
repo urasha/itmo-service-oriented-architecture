@@ -4,11 +4,10 @@ $projectDirectory = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $runtimeDirectory = Join-Path $projectDirectory '.runtime'
 $stagingDirectory = Join-Path $runtimeDirectory ('helios-package-' + [Guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($stagingDirectory) | Out-Null
-$files = @('flats-service/target/flats-service.war','flats-service/target/flats-service-jetty-errors.jar','agency-service/target/agency-service.war','README.md','IMPLEMENTATION_PLAN.md','deploy/versions.env','deploy/env.example')
+$files = @('flats-service/target/flats-service.war','flats-service/target/flats-service-jetty-errors.jar','agency-service/target/agency-service.war','README.md','docs/ORIGINAL_TASK.md','docs/task2.png','docs/RUNNING.md','docs/HELIOS.md','deploy/versions.env','deploy/env.example')
 $files += Get-ChildItem (Join-Path $projectDirectory 'deploy') -File -Recurse | Where-Object {
     $_.Extension -in @('.sh','.java','.xml','.ini','.mod','.properties') -and $_.Name -notin @('local-secrets.ini','local.env')
 } | ForEach-Object { $_.FullName.Substring($projectDirectory.Length + 1) }
-$files += Get-ChildItem (Join-Path $projectDirectory 'docs') -Filter *.md -File | ForEach-Object { $_.FullName.Substring($projectDirectory.Length + 1) }
 foreach ($relativePath in $files) {
     $destination = Join-Path $stagingDirectory $relativePath
     [IO.Directory]::CreateDirectory((Split-Path $destination -Parent)) | Out-Null

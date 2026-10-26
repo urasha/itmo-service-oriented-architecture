@@ -16,8 +16,4 @@ public final class ApiException extends RuntimeException {
     public static ApiException badRequest(String message) {
         return new ApiException(400, message);
     }
-
-    public static ApiException notFound(long id) {
-        return new ApiException(404, "Квартира с id=" + id + " не найдена");
-    }
 }

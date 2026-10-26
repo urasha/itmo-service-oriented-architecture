@@ -26,7 +26,7 @@ public final class AgencyException extends RuntimeException {
         return new AgencyException(502, "Ошибка обращения к сервису квартир", cause);
     }
 
-    public static AgencyException timeout() {
-        return new AgencyException(504, "Истекло время ожидания сервиса квартир");
+    public static AgencyException timeout(Throwable cause) {
+        return new AgencyException(504, "Истекло время ожидания сервиса квартир", cause);
     }
 }

@@ -1,63 +1,32 @@
 # Service-oriented architecture
 
-Лабораторная №2, вариант 74611. Первый сервис: Spring MVC 6.2.19 / Jetty 12.0.40; второй: JAX-RS 3.1 / Payara Server 6.2025.10. Java 17, оба REST API используют HTTPS. Веб-клиент со всеми 11 операциями включён в WAR Jetty.
+Лабораторная №2, вариант 74611. Java 17, Maven, Lombok.
 
-## Состав
+- `flats-service` — управление коллекцией квартир: Spring MVC, Jetty.
+- `agency-service` — сравнение квартир по цене: JAX-RS, Payara.
+- `contract-model` — общие модели, JSON и валидация.
+- `client` — браузерный клиент на HTML/CSS/JavaScript.
+- `public` — две спецификации OpenAPI и Swagger UI.
+- `deploy` — подготовка и запуск серверов с HTTPS.
 
-- `public/flats.yaml`, `public/agency.yaml` — исходные OpenAPI; `public/` — Swagger UI.
-- `contract-model/` — неизменяемые модели/DTO, JSON и валидация.
-- `flats-service/` — Spring MVC WAR и тесты.
-- `agency-service/` — JAX-RS WAR, HTTPS REST-клиент первого сервиса и тесты.
-- `client/` — HTML/CSS/JavaScript: формы, точные числа, фильтры, сортировки, пагинация; без runtime Node и сборки фронтенда.
-- `deploy/jetty/`, `deploy/tls/` — конфигурация Jetty и генерация TLS.
-- `docs/FIRST_SERVICE.md`, `docs/HELIOS_DEPLOYMENT.md` — подробности запуска и проверок.
-- `deploy/payara/`, `docs/AGENCY_SERVICE.md` — подготовка Payara, truststore, запуск обоих сервисов и интеграционные проверки.
-- [docs/HELIOS.md](docs/HELIOS.md) — рабочие адреса на Helios, SSH-туннель и команды управления.
-- [docs/CLIENT.md](docs/CLIENT.md) — использование и проверки клиента/Swagger; [docs/HELIOS_RUNBOOK.md](docs/HELIOS_RUNBOOK.md) — файлы для переноса и полные команды Helios.
+Условия: [лабораторная №1](docs/ORIGINAL_TASK.md), [лабораторная №2](docs/task2.png).
+Цена `price` добавлена к исходной модели для операций агентства: сумма в рублях с шагом 0.01.
+По условию параметры, включая JSON `flat`, передаются в URL. Коллекция хранится в памяти.
 
-## Локальный запуск (Windows PowerShell)
+## Сборка и запуск
 
-Нужны JDK 17+ и Maven 3.9.x. Из корня проекта:
+Нужны JDK 17 и Maven 3.9+. Для тестов клиента — Node.js.
 
-Lombok подключён как annotation processor и не включается в WAR. В IDE должна быть включена обработка аннотаций.
-
-```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-17' # замените на путь своего JDK
+```sh
 mvn clean verify
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./deploy/jetty/prepare.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./deploy/jetty/start.ps1
-```
-
-prepare.ps1 скачивает закреплённый Jetty при необходимости (с проверкой SHA-512), создаёт отдельную `.runtime/jetty-base`, самоподписанный сертификат с SAN localhost/127.0.0.1 и копирует WAR. ExecutionPolicy действует только на запускаемый процесс PowerShell. Повторная подготовка сохраняет сертификат; выполнять при остановленном сервере. Ключи/пароли остаются в игнорируемой `.runtime/`.
-
-Клиент: **<https://localhost:8443/app/index.html>**. API: <https://localhost:8443/flats>. Swagger: <https://localhost:8443/docs/index.html>. Запуск Payara — [docs/AGENCY_SERVICE.md](docs/AGENCY_SERVICE.md). Браузер должен доверять обоим публичным сертификатам. Клиент и Swagger используют `/app/config.js`, который содержит публичные HTTPS URL; prepare.ps1 Jetty по умолчанию задаёт агентство https://localhost:8444. Для других адресов — параметры -FlatsPublicUrl/-AgencyPublicUrl, для POSIX — FLATS_PUBLIC_BASE_URL/AGENCY_PUBLIC_BASE_URL.
-
-Во втором терминале, с проверкой сертификата:
-
-```powershell
-curl.exe --noproxy '*' --cacert .runtime/jetty-base/etc/flats.crt -i https://localhost:8443/flats
-mvn verify -Pintegration
-```
-
-Ожидается 200, `Server: Jetty(12.0.40)`, `X-Total-Count` и JSON-массив. Integration-профиль проверяет заранее запущенный сервер. Остановка: Ctrl+C в первом терминале. На Unix использовать prepare.sh/start.sh; см. инструкцию Helios.
-
-## Операции
-
-- `GET /flats` — фильтры, сортировки, страницы.
-- `POST /flats`, `GET /flats/{id}`, `PUT /flats/{id}`, `PATCH /flats/{id}`, `DELETE /flats/{id}`.
-- `GET /flats/min-creation-date`, `GET /flats/max-new`, `GET /flats/count-by-transport`.
-- `GET /agency/get-cheapest/{id1}/{id2}`, `GET /agency/get-most-expensive/{id1}/{id2}/{id3}` — на Payara; данные запрашиваются у Jetty по HTTPS.
-
-POST/PUT/PATCH получают JSON в URL-параметре `flat`; тело не используется. `filter` и `transport` также соответствуют YAML. Поле price обязательно по существующей спецификации, хотя его не было в исходном Java-классе ЛР1. Ошибки `{timestamp, message}`, UTC: структура → 400, ограничения модели → 422, отсутствующий ID → 404, длинный URI → 414.
-
-Коллекция хранится в памяти и сбрасывается при рестарте. HTTP-коннектор не включён; servlet-фильтр дополнительно отвергает незащищённые запросы. Оба сервиса развёрнуты на Helios; статический клиент: https://se.ifmo.ru/~s413022/soa-lab2/app/index.html. Для доступа к API откройте SSH-туннель по [инструкции](docs/HELIOS.md).
-
-## Проверки и перенос
-
-```powershell
 node --test client/test/*.test.js
-mvn verify '-Pintegration,agency-integration' '-Dagency.certificate=C:/path/to/agency.crt'
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/package.ps1 -IncludeRuntimes
 ```
 
-Локальная Maven-сборка проходит 140 тестов, клиент — 33 JS-теста. Все 11 операций и обе спецификации Swagger проверены в Chrome с опубликованным фронтендом и API на Helios. Подробности — в [docs/HELIOS.md](docs/HELIOS.md). Пакет `.runtime/soa-74611-helios.zip` содержит WAR, deployment-сценарии, инструкции, SHA512SUMS и (с IncludeRuntimes) исходные архивы серверов. Секреты/готовые Windows-домены не включаются.
+[Локальный запуск двух сервисов](docs/RUNNING.md) · [Работа на Helios](docs/HELIOS.md).
+
+После локального запуска:
+
+- Клиент: https://localhost:8443/app/index.html
+- Swagger UI: https://localhost:8443/docs/index.html
+
+В Swagger UI можно переключаться между API коллекции и агентства.

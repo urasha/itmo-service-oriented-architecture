@@ -80,6 +80,6 @@ public final class FlatController {
 
     private FlatInput input(HttpServletRequest request) {
         QueryParser query = new QueryParser(request, Set.of("flat"), Set.of());
-        return decoder.input(decoder.read(query.required("flat"), FlatValidator.Mode.INPUT));
+        return decoder.input(query.required("flat"));
     }
 }

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,7 +14,8 @@ public final class FlatValidator {
     public enum Mode {
         INPUT,
         PATCH,
-        FILTER
+        FILTER,
+        OUTPUT
     }
 
     private enum Type {
@@ -69,12 +72,16 @@ public final class FlatValidator {
     private FlatValidator() {}
 
     public static void validate(JsonNode value, Mode mode) {
-        Map<String, Field> fields = new java.util.HashMap<>(FLAT);
-        if (mode == Mode.FILTER) {
+        Map<String, Field> fields = new HashMap<>(FLAT);
+        Set<String> required = new HashSet<>(REQUIRED);
+        if (mode == Mode.FILTER || mode == Mode.OUTPUT) {
             fields.put("id", new Field(Type.LONG));
             fields.put("creationDate", new Field(Type.DATE));
         }
-        object(value, fields, REQUIRED, mode, "flat");
+        if (mode == Mode.OUTPUT) {
+            required.addAll(Set.of("id", "creationDate", "transport"));
+        }
+        object(value, fields, required, mode, "flat");
     }
 
     private static void object(
@@ -84,7 +91,7 @@ public final class FlatValidator {
             Mode mode,
             String path) {
         validateObjectShape(node, mode, path);
-        if (mode == Mode.INPUT) {
+        if (mode == Mode.INPUT || mode == Mode.OUTPUT) {
             validateRequiredFields(node, required, path);
         }
         validateFields(node, fields, mode, path);
