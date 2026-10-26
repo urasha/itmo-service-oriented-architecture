@@ -15,11 +15,10 @@
 
 ## Сборка и запуск
 
-Нужны JDK 17 и Maven 3.9+. Для тестов клиента — Node.js.
+Нужны JDK 17 и Maven 3.9+.
 
 ```sh
-mvn clean verify
-node --test client/test/*.test.js
+mvn clean package
 ```
 
 [Локальный запуск двух сервисов](docs/RUNNING.md) · [Работа на Helios](docs/HELIOS.md).

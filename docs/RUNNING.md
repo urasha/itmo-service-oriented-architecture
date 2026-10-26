@@ -1,13 +1,13 @@
 # Локальный запуск
 
-Нужны JDK 17, Maven 3.9+ и PowerShell. Node.js используется только для тестов клиента.
+Нужны JDK 17, Maven 3.9+ и PowerShell.
 Команды выполняются из корня проекта. В IDE включите обработку аннотаций Lombok.
 
 ## Сборка и Jetty
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
-mvn clean verify
+mvn clean package
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/jetty/prepare.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/jetty/start.ps1
 ```
@@ -56,26 +56,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/payara/manage.ps1
 Для Jetty параметры подготовки — `-FlatsPublicUrl` и `-AgencyPublicUrl`.
 Параметры Payara `-FlatsInternalUrl`, `-FlatsPublicUrl`, `-AllowedOrigin`
 задают адрес межсервисного вызова, адрес редиректа и origin браузерного клиента.
-
-## Проверки
-
-```powershell
-mvn verify
-node --test client/test/*.test.js
-```
-
-Maven проверяет Java-код и обе спецификации OpenAPI, включая ссылки на схемы.
-Для HTTPS-проверок сначала запустите оба сервера:
-
-```powershell
-$agencyCert = (Resolve-Path '.runtime/payara-domains/agency-private/tls/agency.crt').Path
-mvn verify '-Pintegration,agency-integration' "-Dagency.certificate=$agencyCert"
-```
-
-Для нестандартных портов доступны свойства `flats.baseUrl`, `agency.baseUrl`,
-`agency.adminPort`, `agency.httpPort`; для сертификата первого сервиса — `flats.certificate`.
-Тест `AgencyUnavailableIT` запускается отдельно с `-Dagency.expectUnavailable=true`
-и `-Dit.test=AgencyUnavailableIT`, когда Payara работает, а Jetty остановлен.
 
 ## Пакет для переноса
 

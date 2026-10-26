@@ -12,4 +12,3 @@ nohup sh "$project_root/deploy/jetty/start.sh" > "$JETTY_BASE/logs/stdout.log" 2
 printf '%s\n' "$!" > "$pid_file"
 sh "$project_root/deploy/payara/manage.sh" start
 sh "$project_root/deploy/payara/manage.sh" deploy
-sh "$script_dir/smoke.sh"

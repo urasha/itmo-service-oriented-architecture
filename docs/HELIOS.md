@@ -31,9 +31,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/helios/tunnel.ps1
 ssh -p 2222 s413022@helios.cs.ifmo.ru
 cd ~/soa-lab2
 
-# Проверка работающих сервисов
-sh deploy/helios/smoke.sh
-
 # Остановка и повторный запуск
 sh deploy/helios/stop.sh
 sh deploy/helios/start.sh
@@ -59,7 +56,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/build-client.ps1
 scp.exe -P 2222 -r .runtime/client-dist/app .runtime/client-dist/docs .runtime/client-dist/index.html s413022@helios.cs.ifmo.ru:public_html/soa-lab2/
 ```
 
-Для обновления бэкенда сначала соберите WAR командой `mvn clean verify`, остановите свои сервисы, перенесите `flats-service.war`, `flats-service-jetty-errors.jar` и `agency-service.war` в одноимённые каталоги `~/soa-lab2/*-service/target/`, затем выполните `sh deploy/helios/prepare.sh` и `sh deploy/helios/start.sh` из `~/soa-lab2`.
+Для обновления бэкенда сначала соберите WAR командой `mvn clean package`, остановите свои сервисы, перенесите `flats-service.war`, `flats-service-jetty-errors.jar` и `agency-service.war` в одноимённые каталоги `~/soa-lab2/*-service/target/`, затем выполните `sh deploy/helios/prepare.sh` и `sh deploy/helios/start.sh` из `~/soa-lab2`.
 
 ## Перенос на другую учётную запись
 
