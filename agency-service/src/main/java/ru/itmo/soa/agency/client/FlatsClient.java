@@ -11,16 +11,11 @@ import ru.itmo.soa.contract.FlatValidator;
 import ru.itmo.soa.contract.JsonCodec;
 import ru.itmo.soa.contract.ValidationException;
 
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -28,22 +23,20 @@ import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManagerFactory;
 
 public final class FlatsClient implements FlatSource {
     private final HttpClient client;
     private final AgencySettings settings;
     private final ObjectMapper mapper;
 
-    public FlatsClient(AgencySettings settings, ObjectMapper mapper) {
+    private final FlatsDiscovery discovery;
+
+    public FlatsClient(AgencySettings settings, ObjectMapper mapper, FlatsDiscovery discovery, SSLContext tls) {
+        this.discovery = discovery;
         this.settings = settings;
         this.mapper = mapper;
-        this.client = createClient(settings);
-    }
-
-    private static HttpClient createClient(AgencySettings settings) {
-        return HttpClient.newBuilder()
-                .sslContext(createSslContext(settings))
+        this.client = HttpClient.newBuilder()
+                .sslContext(tls)
                 .sslParameters(sslParameters())
                 .connectTimeout(settings.connectTimeout())
                 .followRedirects(HttpClient.Redirect.NEVER)
@@ -58,19 +51,6 @@ public final class FlatsClient implements FlatSource {
         return parameters;
     }
 
-    private static SSLContext createSslContext(AgencySettings settings) {
-        try {
-            TrustManagerFactory factory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            factory.init(loadTrustStore(settings));
-            SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, factory.getTrustManagers(), null);
-            return context;
-        } catch (IOException | GeneralSecurityException e) {
-            throw new IllegalStateException("Cannot initialize HTTPS client truststore", e);
-        }
-    }
-
     @Override
     public Flat get(long id) {
         HttpResponse<String> response = send(flatRequest(id));
@@ -78,25 +58,8 @@ public final class FlatsClient implements FlatSource {
         return readFlat(response.body(), id);
     }
 
-    private static KeyStore loadTrustStore(AgencySettings settings)
-            throws IOException, GeneralSecurityException {
-        char[] password =
-                Files.readString(settings.trustStorePasswordFile(), StandardCharsets.UTF_8)
-                        .trim()
-                        .toCharArray();
-        try {
-            KeyStore store = KeyStore.getInstance("PKCS12");
-            try (var input = Files.newInputStream(settings.trustStore())) {
-                store.load(input, password);
-            }
-            return store;
-        } finally {
-            Arrays.fill(password, '\0');
-        }
-    }
-
     private HttpRequest flatRequest(long id) {
-        return HttpRequest.newBuilder(AgencySettings.flatUri(settings.internalBaseUrl(), id))
+        return HttpRequest.newBuilder(AgencySettings.flatUri(discovery.endpoint(), id))
                 .timeout(settings.requestTimeout())
                 .header("Accept", "application/json")
                 .GET()

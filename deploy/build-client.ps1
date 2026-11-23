@@ -23,5 +23,5 @@ Copy-Item -Path (Join-Path $projectDirectory 'public/*') -Destination $docsDirec
 $configuration = @{ flatsBaseUrl = $FlatsBaseUrl.TrimEnd('/'); agencyBaseUrl = $AgencyBaseUrl.TrimEnd('/'); requestTimeoutMillis = 20000 }
 $utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText((Join-Path $appDirectory 'config.js'), 'window.SOA_CONFIG = ' + ($configuration | ConvertTo-Json -Compress) + ";`n", $utf8)
-[IO.File]::WriteAllText((Join-Path $outputDirectory 'index.html'), '<!doctype html><html lang="ru"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/index.html"><title>SOA Lab 2</title><a href="./app/index.html">Open application</a></html>', $utf8)
+[IO.File]::WriteAllText((Join-Path $outputDirectory 'index.html'), '<!doctype html><html lang="ru"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/index.html"><title>SOA Lab 3</title><a href="./app/index.html">Open application</a></html>', $utf8)
 Write-Host "Static frontend: $outputDirectory"

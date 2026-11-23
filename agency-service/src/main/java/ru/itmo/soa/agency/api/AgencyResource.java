@@ -11,11 +11,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import ru.itmo.soa.agency.config.AgencySettings;
 import ru.itmo.soa.agency.service.AgencyService;
 import ru.itmo.soa.contract.Flat;
 
+@Component
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
@@ -53,7 +55,7 @@ public final class AgencyResource {
     }
 
     private Response redirect(long id) {
-        return Response.seeOther(AgencySettings.flatUri(settings.publicBaseUrl(), id)).build();
+        return Response.seeOther(AgencySettings.flatUri(settings.flatsPublicBaseUrl(), id)).build();
     }
 
     private Response flatResponse(Flat flat) throws JsonProcessingException {

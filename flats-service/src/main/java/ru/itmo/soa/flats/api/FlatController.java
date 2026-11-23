@@ -1,7 +1,5 @@
 package ru.itmo.soa.flats.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -10,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import ru.itmo.soa.contract.*;
-import ru.itmo.soa.flats.service.FlatQuery;
 import ru.itmo.soa.flats.service.FlatService;
 
 import java.net.URI;
@@ -26,25 +23,16 @@ public final class FlatController {
 
     @GetMapping
     public ResponseEntity<List<Flat>> list(HttpServletRequest request) {
-        FlatQuery.Page page = service.list(selectionQuery(request));
+        QueryParser query =
+                new QueryParser(request, Set.of("page", "size", "sort", "filter"), Set.of("sort"));
+        FlatPage page = service.list(
+                query.positiveInt("page", 1),
+                query.positiveInt("size", 20),
+                query.optional("filter"),
+                query.all("sort"));
         return ResponseEntity.ok()
                 .header("X-Total-Count", Long.toString(page.total()))
                 .body(page.items());
-    }
-
-    private FlatQuery selectionQuery(HttpServletRequest request) {
-        QueryParser query =
-                new QueryParser(request, Set.of("page", "size", "sort", "filter"), Set.of("sort"));
-        return FlatQuery.of(
-                query.positiveInt("page", 1),
-                query.positiveInt("size", 20),
-                selectionFilter(query),
-                query.all("sort"));
-    }
-
-    private JsonNode selectionFilter(QueryParser query) {
-        String filter = query.optional("filter");
-        return filter == null ? null : decoder.read(filter, FlatValidator.Mode.FILTER);
     }
 
     @PostMapping
@@ -68,8 +56,7 @@ public final class FlatController {
     public Flat patch(@PathVariable("id") String id, HttpServletRequest request) {
         long parsed = QueryParser.id(id);
         QueryParser query = new QueryParser(request, Set.of("flat"), Set.of());
-        return service.patch(
-                parsed, decoder.read(query.required("flat"), FlatValidator.Mode.PATCH));
+        return service.patch(parsed, query.required("flat"));
     }
 
     @DeleteMapping("/{id}")

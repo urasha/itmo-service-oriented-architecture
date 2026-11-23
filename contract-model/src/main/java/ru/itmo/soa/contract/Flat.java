@@ -1,5 +1,7 @@
 package ru.itmo.soa.contract;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -16,7 +18,7 @@ public record Flat(
         @JsonProperty("new") boolean isNew,
         View view,
         Transport transport,
-        House house) {
+        House house) implements Serializable {
     public FlatInput toInput() {
         return new FlatInput(
                 name, coordinates, area, price, numberOfRooms, isNew, view, transport, house);

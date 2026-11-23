@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ejb-jar xmlns="https://jakarta.ee/xml/ns/jakartaee" version="4.0">
+  <assembly-descriptor>
+    <application-exception><exception-class>ru.itmo.soa.contract.FlatNotFoundException</exception-class></application-exception>
+    <application-exception><exception-class>ru.itmo.soa.contract.ValidationException</exception-class></application-exception>
+  </assembly-descriptor>
+</ejb-jar>

@@ -1,3 +1,5 @@
 package ru.itmo.soa.contract;
 
-public record Coordinates(float x, double y) {}
+import java.io.Serializable;
+
+public record Coordinates(float x, double y) implements Serializable {}

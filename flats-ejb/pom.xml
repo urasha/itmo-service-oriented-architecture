@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>ru.itmo.soa</groupId><artifactId>flat-services</artifactId><version>1.0.0-SNAPSHOT</version></parent>
+  <artifactId>flats-ejb</artifactId>
+  <dependencies>
+    <dependency><groupId>ru.itmo.soa</groupId><artifactId>contract-model</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>jakarta.ejb</groupId><artifactId>jakarta.ejb-api</artifactId><version>4.0.1</version><scope>provided</scope></dependency>
+  </dependencies>
+  <build>
+    <finalName>flats-ejb</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.6.1</version>
+        <executions><execution><phase>package</phase><goals><goal>shade</goal></goals></execution></executions>
+        <configuration>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <filters><filter><artifact>*:*</artifact><excludes>
+            <exclude>META-INF/*.SF</exclude><exclude>META-INF/*.RSA</exclude><exclude>META-INF/*.DSA</exclude>
+            <exclude>module-info.class</exclude><exclude>META-INF/versions/*/module-info.class</exclude>
+          </excludes></filter></filters>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

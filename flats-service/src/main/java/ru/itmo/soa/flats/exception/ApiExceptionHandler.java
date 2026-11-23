@@ -10,6 +10,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import ru.itmo.soa.contract.ApiError;
+import ru.itmo.soa.contract.FlatNotFoundException;
 import ru.itmo.soa.contract.ValidationException;
 
 import java.time.Clock;

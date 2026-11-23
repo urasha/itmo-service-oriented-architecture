@@ -11,7 +11,6 @@ import ru.itmo.soa.contract.Flat;
 import ru.itmo.soa.flats.service.FlatService;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -37,10 +36,10 @@ public final class StatisticsController {
         return Map.of("count", service.count(decoder.transport(query.required("transport"))));
     }
 
-    private ResponseEntity<Flat> flatResponse(Optional<Flat> flat) {
-        if (flat.isEmpty()) {
+    private ResponseEntity<Flat> flatResponse(Flat flat) {
+        if (flat == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(flat.get());
+        return ResponseEntity.ok(flat);
     }
 }

@@ -3,7 +3,6 @@ package ru.itmo.soa.flats.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,21 +16,9 @@ import ru.itmo.soa.flats.exception.ApiException;
 public final class FlatInputDecoder {
     private final ObjectMapper mapper;
 
-    public ObjectNode read(String json, FlatValidator.Mode mode) {
-        try {
-            JsonNode node = JsonCodec.parse(mapper, json);
-            FlatValidator.validate(node, mode);
-            return (ObjectNode) node;
-        } catch (ValidationException e) {
-            if (mode == FlatValidator.Mode.FILTER) {
-                throw ApiException.badRequest(e.getMessage());
-            }
-            throw e;
-        }
-    }
-
     public FlatInput input(String json) {
-        ObjectNode node = read(json, FlatValidator.Mode.INPUT);
+        JsonNode node = JsonCodec.parse(mapper, json);
+        FlatValidator.validate(node, FlatValidator.Mode.INPUT);
         try {
             return mapper.treeToValue(node, FlatInput.class);
         } catch (JsonProcessingException e) {

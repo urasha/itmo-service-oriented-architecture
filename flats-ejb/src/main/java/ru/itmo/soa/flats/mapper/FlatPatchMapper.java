@@ -6,13 +6,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.stereotype.Component;
-
 import ru.itmo.soa.contract.FlatInput;
 import ru.itmo.soa.contract.FlatValidator;
 import ru.itmo.soa.contract.ValidationException;
 
-@Component
 @RequiredArgsConstructor
 public final class FlatPatchMapper {
     private final ObjectMapper mapper;

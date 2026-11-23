@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import ru.itmo.soa.contract.Flat;
+import ru.itmo.soa.contract.FlatPage;
 import ru.itmo.soa.contract.ValidationException;
 import ru.itmo.soa.flats.service.FlatFieldRegistry.Field;
 
@@ -30,13 +31,11 @@ public final class FlatQuery {
 
     private record SortKey(Field field, boolean descending) {}
 
-    public record Page(List<Flat> items, long total) {}
-
     public static FlatQuery of(int page, int size, JsonNode filter, List<String> sorts) {
         return new FlatQuery(page, size, readConditions(filter), readSortKeys(sorts));
     }
 
-    public Page select(List<Flat> snapshot) {
+    public FlatPage select(List<Flat> snapshot) {
         List<Flat> matches = filter(snapshot);
         matches.sort(new FlatComparator(sortKeys));
         return selectPage(matches);
@@ -61,14 +60,14 @@ public final class FlatQuery {
         return true;
     }
 
-    private Page selectPage(List<Flat> matches) {
+    private FlatPage selectPage(List<Flat> matches) {
         long offset = (long) (page - 1) * size;
         if (offset >= matches.size()) {
-            return new Page(List.of(), matches.size());
+            return new FlatPage(List.of(), matches.size());
         }
         int start = (int) offset;
         int end = (int) Math.min(offset + size, matches.size());
-        return new Page(List.copyOf(matches.subList(start, end)), matches.size());
+        return new FlatPage(List.copyOf(matches.subList(start, end)), matches.size());
     }
 
     private static List<Condition> readConditions(JsonNode filter) {
